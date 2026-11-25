@@ -96,7 +96,6 @@ tollguard/
 │   ├── models/              # trained models, calibrators, metrics.json
 │   └── notebooks/           # EDA and model analysis
 ├── frontend/                # index.html, style.css, app.js
-└── assets/dashboard.png
 ```
 
 ## Design decisions

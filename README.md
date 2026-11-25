@@ -114,3 +114,5 @@ tollguard/
 - The fare model's weak spot is mild overcharges (1.4-1.6x the fare), which sit close to normal billing.
 - Plaza coordinates are approximate.
 - MongoDB persistence is optional, and that code path was verified against a mocked MongoDB, not a live server.
+
+- ## Vedant Mhapsekar

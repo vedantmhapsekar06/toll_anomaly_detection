@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TollGuard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div><div class="title">TollGuard</div><div class="sub">FASTag toll anomaly monitoring</div></div>
+    </div>
+    <div class="actions">
+      <span class="sub" id="run-label">No run yet</span>
+      <span class="sub" id="storage"></span>
+      <button class="btn" id="btn-demo" type="button">Run demo data</button>
+      <button class="btn primary" id="btn-upload" type="button">Upload CSV</button>
+      <input type="file" id="file" accept=".csv,text/csv" hidden>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" role="status" aria-live="polite" hidden></div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" type="button" data-tab="alerts" aria-selected="true">Alerts</button>
+    <button role="tab" type="button" data-tab="analytics" aria-selected="false">Analytics</button>
+    <button role="tab" type="button" data-tab="model" aria-selected="false">Model performance</button>
+    <button role="tab" type="button" data-tab="blocked" aria-selected="false" id="tab-blocked">Blocked tags</button>
+  </nav>
+
+  <!-- ALERTS -->
+  <section id="panel-alerts" role="tabpanel" class="panel">
+    <div class="stats">
+      <div class="card stat"><div class="sub">Transactions</div><div class="num" id="stat-total">-</div><div class="sub">uploaded file</div></div>
+      <div class="card stat"><div class="sub">Flagged</div><div class="num" id="stat-flagged">-</div><div class="sub" id="stat-flagged-sub">&nbsp;</div></div>
+      <div class="card stat"><div class="sub">Critical</div><div class="num crit-text" id="stat-critical">-</div><div class="sub">risk score 80 or above</div></div>
+      <div class="card stat"><div class="sub">Warning</div><div class="num warn-text" id="stat-warning">-</div><div class="sub">risk score 50 to 79</div></div>
+    </div>
+
+    <div class="card filters">
+      <label class="fl">Severity
+        <select id="f-severity"><option value="">All</option><option>Critical</option><option>Warning</option><option>Info</option></select></label>
+      <label class="fl">Detector<select id="f-detector"><option value="">All</option></select></label>
+      <label class="fl">Plaza<select id="f-plaza"><option value="">All</option></select></label>
+      <label class="fl">Status
+        <select id="f-status"><option value="">All</option><option value="open" selected>Open</option><option value="confirmed">Confirmed</option><option value="dismissed">Dismissed</option><option value="blocked">Blocked</option></select></label>
+      <label class="fl grow">Search<input id="f-q" type="search" maxlength="60" placeholder="Tag or transaction ID"></label>
+    </div>
+
+    <div class="split">
+      <div class="card tablecard">
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Risk</th><th>Transaction</th><th>Plaza</th><th>Detected</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody id="rows"><tr><td colspan="6" class="empty">Upload a CSV or run the demo data to see alerts.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pager sub">
+          <span id="range"></span>
+          <span class="pgbtns"><button class="btn small" id="prev" type="button" disabled>Previous</button>
+          <span id="pageinfo"></span>
+          <button class="btn small" id="next" type="button" disabled>Next</button></span>
+        </div>
+      </div>
+      <aside class="card side" id="detail" aria-live="polite"><div class="empty">Select an alert to see details.</div></aside>
+    </div>
+
+    <div class="charts">
+      <div class="card chart"><div class="ctitle">Alerts by detector</div><div id="chart-detector"></div></div>
+      <div class="card chart"><div class="ctitle">Most flagged plazas</div><div id="chart-plaza"></div></div>
+    </div>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section id="panel-analytics" role="tabpanel" class="panel" hidden>
+    <div class="charts">
+      <div class="card chart"><div class="ctitle">Severity split</div><div id="an-severity"></div></div>
+      <div class="card chart"><div class="ctitle">Alert status</div><div id="an-status"></div></div>
+    </div>
+    <div class="card chart"><div class="ctitle">Flagged transactions per day</div><div id="an-days"></div></div>
+  </section>
+
+  <!-- MODEL -->
+  <section id="panel-model" role="tabpanel" class="panel" hidden><div id="model-body"></div></section>
+
+  <!-- BLOCKED -->
+  <section id="panel-blocked" role="tabpanel" class="panel" hidden><div id="blocked-body"></div></section>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+plaza_id,name,corridor,lat,lon,fare_factor
+P01,Vashi,Mumbai-Kolhapur,19.076,72.999,1.0
+P02,Khalapur,Mumbai-Kolhapur,18.82,73.29,1.25
+P03,Urse,Mumbai-Kolhapur,18.715,73.6,1.2
+P04,Khed Shivapur,Mumbai-Kolhapur,18.33,73.84,1.05
+P05,Anewadi,Mumbai-Kolhapur,17.95,73.99,1.0
+P06,Tasawade,Mumbai-Kolhapur,17.26,74.19,0.95
+P07,Kini,Mumbai-Kolhapur,16.86,74.3,0.9
+P08,Airoli,Mumbai-Nashik,19.15,72.998,0.9
+P09,Padgha,Mumbai-Nashik,19.35,73.13,0.95
+P10,Shahapur,Mumbai-Nashik,19.45,73.33,1.0
+P11,Ghoti,Mumbai-Nashik,19.72,73.67,1.05
+P12,Pimpalgaon Baswant,Mumbai-Nashik,20.15,73.98,1.1
+P13,Dahisar,Mumbai-Gujarat,19.26,72.87,0.85
+P14,Charoti,Mumbai-Gujarat,19.87,72.93,1.15
+P15,Yavat,Pune-Solapur,18.46,74.39,0.95
+P16,Surdi,Pune-Solapur,17.9,75.7,1.0
+P17,Khed,Pune-Nashik,18.86,73.88,0.95
+P18,Hivargaon Pawsa,Pune-Nashik,19.58,74.22,1.0
+P19,Gonde,Pune-Nashik,19.89,73.95,0.9

@@ -113,10 +113,6 @@ Stability views: the **learning curve** is flat and high from 10% to 100% of the
 
 <img width="1097" alt="Alerts tab" src="docs/dashboard_alerts.png" />
 
-The **Model performance** tab shows the test metrics, the model-selection leaderboard, the fit-diagnostic verdicts with learning and capacity curves, the fresh-dataset results and the positive controls.
-
-<img width="1097" alt="Model selection" src="docs/model_selection.png" />
-<img width="1097" alt="Fit diagnostics" src="docs/fit_diagnostics.png" />
 
 ## How scoring works
 

@@ -1,0 +1,43 @@
+{
+  "rows": 49698,
+  "tags": 3382,
+  "plazas": 19,
+  "time_range": [
+    "2026-10-01 00:05:49",
+    "2026-10-30 23:58:31"
+  ],
+  "days": 30.0,
+  "label_counts": {
+    "none": 43114,
+    "duplicate_charge": 1500,
+    "fare_tampering": 1400,
+    "api_flood": 1371,
+    "class_mismatch": 1313,
+    "cloned_tag": 1000
+  },
+  "anomaly_rate": 0.1325,
+  "amount_INR": {
+    "min": 0,
+    "median": 110.0,
+    "max": 2160
+  },
+  "req_per_min": {
+    "median": 64.0,
+    "p99": 2107.149999999994,
+    "max": 4993
+  },
+  "rows_per_tag": {
+    "median": 12.0,
+    "max": 69
+  },
+  "checks_passed": [
+    "required columns",
+    "no nulls",
+    "unique txn_id",
+    "datetime timestamps",
+    "non-negative amounts and telemetry",
+    "known plazas",
+    "known labels",
+    "plausible axle counts"
+  ]
+}

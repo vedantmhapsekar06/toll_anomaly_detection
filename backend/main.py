@@ -364,6 +364,15 @@ def metrics():
     return json.loads(cfg.METRICS_JSON.read_text())
 
 
+@app.get("/api/diagnostics")
+def diagnostics():
+    """Model-selection leaderboard and over/underfitting evidence (written by the ML pipeline)."""
+    if not (cfg.SELECTION_JSON.exists() and cfg.DIAGNOSTICS_JSON.exists()):
+        raise HTTPException(status_code=404, detail="Diagnostics not found. Run python ml/run_pipeline.py")
+    return {"selection": json.loads(cfg.SELECTION_JSON.read_text()),
+            "diagnostics": json.loads(cfg.DIAGNOSTICS_JSON.read_text())}
+
+
 @app.get("/api/plazas")
 def plazas():
     return _records(state["detector"].plazas)

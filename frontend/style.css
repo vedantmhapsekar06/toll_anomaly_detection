@@ -81,3 +81,16 @@ tbody tr[data-txn]{cursor:pointer}
 .sect h2{margin:0;font-size:16px}
 .note{font-size:13px;color:var(--muted);line-height:1.5}
 @media(max-width:900px){.split{flex-direction:column}.side{width:100%}}
+
+/* model evidence: selection, fit diagnostics, controls */
+.verdict{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;vertical-align:middle}
+.v-good{background:#DCFCE7;color:#166534}.v-bad{background:#FEE2E2;color:#991B1B}
+.pass{color:#166534;font-weight:600}.fail{color:#991B1B;font-weight:600}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.chartbox{border:1px solid var(--line);border-radius:10px;padding:10px}
+.chartbox h4{margin:0 0 6px;font-size:13px}
+.chartbox svg{width:100%;height:auto;display:block}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:12px;margin-top:4px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.selrow td{background:#EEF2FF}
+.h3{margin:6px 0 0;font-size:14px;font-weight:700}

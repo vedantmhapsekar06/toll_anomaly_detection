@@ -1,0 +1,1004 @@
+{
+  "protocol": {
+    "selection_metric": "mean validation PR-AUC over 4 rolling-origin folds, on gated rows",
+    "winner_rule": "cheapest deployable candidate not significantly worse than the best (paired, 1 SE)",
+    "deployable": "unsupervised families only",
+    "split_rows": {
+      "train": 34788,
+      "calibration": 4970,
+      "test": 9940
+    },
+    "fold_rows": [
+      {
+        "fit": 14910,
+        "validate": 4970
+      },
+      {
+        "fit": 19880,
+        "validate": 4970
+      },
+      {
+        "fit": 24850,
+        "validate": 4969
+      },
+      {
+        "fit": 29819,
+        "validate": 4969
+      }
+    ]
+  },
+  "detectors": {
+    "api_flood": {
+      "candidates": [
+        {
+          "id": "isolation_forest(n_estimators=25,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 25,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": true,
+          "capacity_knob": "n_estimators",
+          "capacity": 25,
+          "fold_val_pr_auc": [
+            0.9018,
+            0.9193,
+            0.8918,
+            0.7637
+          ],
+          "fold_train_pr_auc": [
+            0.8923,
+            0.9568,
+            0.8149,
+            0.811
+          ],
+          "val_pr_auc": 0.8691,
+          "val_pr_auc_sd": 0.0712,
+          "train_pr_auc": 0.8687,
+          "val_roc_auc": 0.9967,
+          "gap": -0.0004,
+          "fit_seconds": 0.04
+        },
+        {
+          "id": "isolation_forest(n_estimators=100,max_samples=64)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 100,
+            "max_samples": 64
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 100,
+          "fold_val_pr_auc": [
+            0.9926,
+            0.9872,
+            0.9971,
+            0.9906
+          ],
+          "fold_train_pr_auc": [
+            0.9953,
+            0.9949,
+            0.9941,
+            0.9942
+          ],
+          "val_pr_auc": 0.9919,
+          "val_pr_auc_sd": 0.0041,
+          "train_pr_auc": 0.9946,
+          "val_roc_auc": 0.9996,
+          "gap": 0.0027,
+          "fit_seconds": 0.1
+        },
+        {
+          "id": "isolation_forest(n_estimators=100,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 100,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 100,
+          "fold_val_pr_auc": [
+            0.9817,
+            0.9539,
+            0.9859,
+            0.9077
+          ],
+          "fold_train_pr_auc": [
+            0.9748,
+            0.9649,
+            0.9533,
+            0.9515
+          ],
+          "val_pr_auc": 0.9573,
+          "val_pr_auc_sd": 0.036,
+          "train_pr_auc": 0.9611,
+          "val_roc_auc": 0.9986,
+          "gap": 0.0038,
+          "fit_seconds": 0.14
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=64)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 64
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.9948,
+            0.9885,
+            0.9972,
+            0.9945
+          ],
+          "fold_train_pr_auc": [
+            0.9959,
+            0.9956,
+            0.9943,
+            0.994
+          ],
+          "val_pr_auc": 0.9938,
+          "val_pr_auc_sd": 0.0037,
+          "train_pr_auc": 0.995,
+          "val_roc_auc": 0.9997,
+          "gap": 0.0012,
+          "fit_seconds": 0.3
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.9853,
+            0.9753,
+            0.9936,
+            0.9469
+          ],
+          "fold_train_pr_auc": [
+            0.9807,
+            0.9778,
+            0.9766,
+            0.9829
+          ],
+          "val_pr_auc": 0.9753,
+          "val_pr_auc_sd": 0.0203,
+          "train_pr_auc": 0.9795,
+          "val_roc_auc": 0.9991,
+          "gap": 0.0042,
+          "fit_seconds": 0.43
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=1024)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 1024
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.8463,
+            0.644,
+            0.8057,
+            0.6987
+          ],
+          "fold_train_pr_auc": [
+            0.7494,
+            0.7616,
+            0.7399,
+            0.7328
+          ],
+          "val_pr_auc": 0.7487,
+          "val_pr_auc_sd": 0.0935,
+          "train_pr_auc": 0.7459,
+          "val_roc_auc": 0.9927,
+          "gap": -0.0028,
+          "fit_seconds": 0.44
+        },
+        {
+          "id": "isolation_forest(n_estimators=600,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 600,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 600,
+          "fold_val_pr_auc": [
+            0.9834,
+            0.985,
+            0.9915,
+            0.9611
+          ],
+          "fold_train_pr_auc": [
+            0.9731,
+            0.9831,
+            0.9749,
+            0.9883
+          ],
+          "val_pr_auc": 0.9803,
+          "val_pr_auc_sd": 0.0132,
+          "train_pr_auc": 0.9798,
+          "val_roc_auc": 0.9993,
+          "gap": -0.0005,
+          "fit_seconds": 0.79
+        },
+        {
+          "id": "local_outlier_factor(n_neighbors=35)",
+          "family": "local_outlier_factor",
+          "params": {
+            "n_neighbors": 35
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_neighbors",
+          "capacity": 35,
+          "fold_val_pr_auc": [
+            0.048,
+            0.0301,
+            0.0362,
+            0.0373
+          ],
+          "fold_train_pr_auc": [
+            0.0427,
+            0.0363,
+            0.0388,
+            0.0401
+          ],
+          "val_pr_auc": 0.0379,
+          "val_pr_auc_sd": 0.0074,
+          "train_pr_auc": 0.0395,
+          "val_roc_auc": 0.3565,
+          "gap": 0.0016,
+          "fit_seconds": 0.06
+        },
+        {
+          "id": "gaussian_mixture(n_components=2)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 2
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 2,
+          "fold_val_pr_auc": [
+            0.7044,
+            0.5177,
+            0.6399,
+            0.6651
+          ],
+          "fold_train_pr_auc": [
+            0.6747,
+            0.5892,
+            0.6648,
+            0.6676
+          ],
+          "val_pr_auc": 0.6318,
+          "val_pr_auc_sd": 0.0805,
+          "train_pr_auc": 0.6491,
+          "val_roc_auc": 0.9879,
+          "gap": 0.0173,
+          "fit_seconds": 0.12
+        },
+        {
+          "id": "gaussian_mixture(n_components=4)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 4
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 4,
+          "fold_val_pr_auc": [
+            0.6033,
+            0.4565,
+            0.5146,
+            0.5667
+          ],
+          "fold_train_pr_auc": [
+            0.5768,
+            0.5747,
+            0.5612,
+            0.5637
+          ],
+          "val_pr_auc": 0.5353,
+          "val_pr_auc_sd": 0.0639,
+          "train_pr_auc": 0.5691,
+          "val_roc_auc": 0.9828,
+          "gap": 0.0338,
+          "fit_seconds": 0.1
+        },
+        {
+          "id": "gaussian_mixture(n_components=16)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 16
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 16,
+          "fold_val_pr_auc": [
+            0.5899,
+            0.3863,
+            0.5155,
+            0.491
+          ],
+          "fold_train_pr_auc": [
+            0.5491,
+            0.5376,
+            0.5169,
+            0.5181
+          ],
+          "val_pr_auc": 0.4957,
+          "val_pr_auc_sd": 0.0842,
+          "train_pr_auc": 0.5304,
+          "val_roc_auc": 0.9775,
+          "gap": 0.0347,
+          "fit_seconds": 1.7
+        },
+        {
+          "id": "one_class_svm(nu=0.05)",
+          "family": "one_class_svm",
+          "params": {
+            "nu": 0.05
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "nu",
+          "capacity": 0.05,
+          "fold_val_pr_auc": [
+            0.3475,
+            0.1984,
+            0.2958,
+            0.3248
+          ],
+          "fold_train_pr_auc": [
+            0.2784,
+            0.312,
+            0.3458,
+            0.3149
+          ],
+          "val_pr_auc": 0.2916,
+          "val_pr_auc_sd": 0.0657,
+          "train_pr_auc": 0.3128,
+          "val_roc_auc": 0.8148,
+          "gap": 0.0212,
+          "fit_seconds": 0.04
+        },
+        {
+          "id": "logistic_regression(C=1.0)",
+          "family": "logistic_regression",
+          "params": {
+            "C": 1.0
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "C",
+          "capacity": 1.0,
+          "fold_val_pr_auc": [
+            0.9964,
+            0.9897,
+            0.9966,
+            0.9943
+          ],
+          "fold_train_pr_auc": [
+            0.9951,
+            0.995,
+            0.9936,
+            0.9944
+          ],
+          "val_pr_auc": 0.9942,
+          "val_pr_auc_sd": 0.0032,
+          "train_pr_auc": 0.9945,
+          "val_roc_auc": 0.9998,
+          "gap": 0.0003,
+          "fit_seconds": 0.03
+        },
+        {
+          "id": "gradient_boosting(max_iter=20)",
+          "family": "gradient_boosting",
+          "params": {
+            "max_iter": 20
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "max_iter",
+          "capacity": 20,
+          "fold_val_pr_auc": [
+            0.995,
+            0.9754,
+            0.9771,
+            0.9993
+          ],
+          "fold_train_pr_auc": [
+            0.9997,
+            0.9991,
+            0.9995,
+            0.9993
+          ],
+          "val_pr_auc": 0.9867,
+          "val_pr_auc_sd": 0.0122,
+          "train_pr_auc": 0.9994,
+          "val_roc_auc": 0.9997,
+          "gap": 0.0127,
+          "fit_seconds": 0.06
+        },
+        {
+          "id": "gradient_boosting(max_iter=400)",
+          "family": "gradient_boosting",
+          "params": {
+            "max_iter": 400
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "max_iter",
+          "capacity": 400,
+          "fold_val_pr_auc": [
+            0.9943,
+            0.9929,
+            0.9917,
+            0.9992
+          ],
+          "fold_train_pr_auc": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "val_pr_auc": 0.9945,
+          "val_pr_auc_sd": 0.0033,
+          "train_pr_auc": 1.0,
+          "val_roc_auc": 0.9998,
+          "gap": 0.0055,
+          "fit_seconds": 0.62
+        }
+      ],
+      "best_deployable": {
+        "id": "isolation_forest(n_estimators=300,max_samples=64)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 300,
+          "max_samples": 64
+        },
+        "train_pr_auc": 0.995,
+        "val_pr_auc": 0.9938,
+        "val_pr_auc_sd": 0.0037,
+        "gap": 0.0012
+      },
+      "indistinguishable_from_best": [
+        "isolation_forest(n_estimators=300,max_samples=64)"
+      ],
+      "selected": {
+        "id": "isolation_forest(n_estimators=300,max_samples=64)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 300,
+          "max_samples": 64
+        },
+        "train_pr_auc": 0.995,
+        "val_pr_auc": 0.9938,
+        "val_pr_auc_sd": 0.0037,
+        "gap": 0.0012
+      },
+      "best_supervised_reference": {
+        "id": "gradient_boosting(max_iter=400)",
+        "family": "gradient_boosting",
+        "params": {
+          "max_iter": 400
+        },
+        "train_pr_auc": 1.0,
+        "val_pr_auc": 0.9945,
+        "val_pr_auc_sd": 0.0033,
+        "gap": 0.0055
+      },
+      "headroom_vs_supervised_pr_auc": 0.0007
+    },
+    "fare_anomaly": {
+      "candidates": [
+        {
+          "id": "isolation_forest(n_estimators=25,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 25,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": true,
+          "capacity_knob": "n_estimators",
+          "capacity": 25,
+          "fold_val_pr_auc": [
+            0.9133,
+            0.9343,
+            0.9622,
+            0.963
+          ],
+          "fold_train_pr_auc": [
+            0.9392,
+            0.9621,
+            0.9711,
+            0.9911
+          ],
+          "val_pr_auc": 0.9432,
+          "val_pr_auc_sd": 0.024,
+          "train_pr_auc": 0.9659,
+          "val_roc_auc": 0.9965,
+          "gap": 0.0227,
+          "fit_seconds": 0.03
+        },
+        {
+          "id": "isolation_forest(n_estimators=100,max_samples=64)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 100,
+            "max_samples": 64
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 100,
+          "fold_val_pr_auc": [
+            0.7039,
+            0.6512,
+            0.6791,
+            0.8457
+          ],
+          "fold_train_pr_auc": [
+            0.7203,
+            0.7437,
+            0.7257,
+            0.9275
+          ],
+          "val_pr_auc": 0.72,
+          "val_pr_auc_sd": 0.0865,
+          "train_pr_auc": 0.7793,
+          "val_roc_auc": 0.9745,
+          "gap": 0.0593,
+          "fit_seconds": 0.1
+        },
+        {
+          "id": "isolation_forest(n_estimators=100,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 100,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 100,
+          "fold_val_pr_auc": [
+            0.9393,
+            0.9573,
+            0.9612,
+            0.9823
+          ],
+          "fold_train_pr_auc": [
+            0.9566,
+            0.9718,
+            0.9802,
+            0.9913
+          ],
+          "val_pr_auc": 0.96,
+          "val_pr_auc_sd": 0.0176,
+          "train_pr_auc": 0.975,
+          "val_roc_auc": 0.9976,
+          "gap": 0.015,
+          "fit_seconds": 0.12
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=64)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 64
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.7373,
+            0.6377,
+            0.758,
+            0.8841
+          ],
+          "fold_train_pr_auc": [
+            0.767,
+            0.7304,
+            0.8022,
+            0.9434
+          ],
+          "val_pr_auc": 0.7543,
+          "val_pr_auc_sd": 0.1012,
+          "train_pr_auc": 0.8107,
+          "val_roc_auc": 0.9787,
+          "gap": 0.0564,
+          "fit_seconds": 0.31
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.9508,
+            0.9438,
+            0.9644,
+            0.9888
+          ],
+          "fold_train_pr_auc": [
+            0.9621,
+            0.9697,
+            0.9804,
+            0.9926
+          ],
+          "val_pr_auc": 0.9619,
+          "val_pr_auc_sd": 0.0198,
+          "train_pr_auc": 0.9762,
+          "val_roc_auc": 0.9978,
+          "gap": 0.0143,
+          "fit_seconds": 0.46
+        },
+        {
+          "id": "isolation_forest(n_estimators=300,max_samples=1024)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 300,
+            "max_samples": 1024
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 300,
+          "fold_val_pr_auc": [
+            0.9111,
+            0.9006,
+            0.9554,
+            0.9732
+          ],
+          "fold_train_pr_auc": [
+            0.9497,
+            0.9514,
+            0.9837,
+            0.9921
+          ],
+          "val_pr_auc": 0.9351,
+          "val_pr_auc_sd": 0.0348,
+          "train_pr_auc": 0.9692,
+          "val_roc_auc": 0.9984,
+          "gap": 0.0341,
+          "fit_seconds": 0.46
+        },
+        {
+          "id": "isolation_forest(n_estimators=600,max_samples=256)",
+          "family": "isolation_forest",
+          "params": {
+            "n_estimators": 600,
+            "max_samples": 256
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_estimators",
+          "capacity": 600,
+          "fold_val_pr_auc": [
+            0.9538,
+            0.9418,
+            0.9638,
+            0.9894
+          ],
+          "fold_train_pr_auc": [
+            0.9641,
+            0.9649,
+            0.9798,
+            0.9911
+          ],
+          "val_pr_auc": 0.9622,
+          "val_pr_auc_sd": 0.0202,
+          "train_pr_auc": 0.975,
+          "val_roc_auc": 0.9978,
+          "gap": 0.0128,
+          "fit_seconds": 0.88
+        },
+        {
+          "id": "local_outlier_factor(n_neighbors=35)",
+          "family": "local_outlier_factor",
+          "params": {
+            "n_neighbors": 35
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_neighbors",
+          "capacity": 35,
+          "fold_val_pr_auc": [
+            0.1988,
+            0.2147,
+            0.0917,
+            0.1035
+          ],
+          "fold_train_pr_auc": [
+            0.2499,
+            0.2859,
+            0.3086,
+            0.2621
+          ],
+          "val_pr_auc": 0.1522,
+          "val_pr_auc_sd": 0.0635,
+          "train_pr_auc": 0.2766,
+          "val_roc_auc": 0.7118,
+          "gap": 0.1244,
+          "fit_seconds": 0.16
+        },
+        {
+          "id": "gaussian_mixture(n_components=2)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 2
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 2,
+          "fold_val_pr_auc": [
+            0.6639,
+            0.2741,
+            0.2453,
+            0.2541
+          ],
+          "fold_train_pr_auc": [
+            0.7033,
+            0.5148,
+            0.6228,
+            0.4363
+          ],
+          "val_pr_auc": 0.3594,
+          "val_pr_auc_sd": 0.2034,
+          "train_pr_auc": 0.5693,
+          "val_roc_auc": 0.9082,
+          "gap": 0.2099,
+          "fit_seconds": 0.05
+        },
+        {
+          "id": "gaussian_mixture(n_components=4)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 4
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 4,
+          "fold_val_pr_auc": [
+            0.5407,
+            0.2886,
+            0.1389,
+            0.2871
+          ],
+          "fold_train_pr_auc": [
+            0.573,
+            0.5805,
+            0.5057,
+            0.4429
+          ],
+          "val_pr_auc": 0.3138,
+          "val_pr_auc_sd": 0.1668,
+          "train_pr_auc": 0.5255,
+          "val_roc_auc": 0.9216,
+          "gap": 0.2117,
+          "fit_seconds": 0.1
+        },
+        {
+          "id": "gaussian_mixture(n_components=16)",
+          "family": "gaussian_mixture",
+          "params": {
+            "n_components": 16
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "n_components",
+          "capacity": 16,
+          "fold_val_pr_auc": [
+            0.4335,
+            0.247,
+            0.1863,
+            0.2252
+          ],
+          "fold_train_pr_auc": [
+            0.4643,
+            0.4795,
+            0.3856,
+            0.3975
+          ],
+          "val_pr_auc": 0.273,
+          "val_pr_auc_sd": 0.1099,
+          "train_pr_auc": 0.4317,
+          "val_roc_auc": 0.9258,
+          "gap": 0.1587,
+          "fit_seconds": 0.55
+        },
+        {
+          "id": "one_class_svm(nu=0.05)",
+          "family": "one_class_svm",
+          "params": {
+            "nu": 0.05
+          },
+          "supervised": false,
+          "anchor": false,
+          "capacity_knob": "nu",
+          "capacity": 0.05,
+          "fold_val_pr_auc": [
+            0.7356,
+            0.7268,
+            0.7557,
+            0.6814
+          ],
+          "fold_train_pr_auc": [
+            0.8366,
+            0.8263,
+            0.8978,
+            0.7413
+          ],
+          "val_pr_auc": 0.7249,
+          "val_pr_auc_sd": 0.0314,
+          "train_pr_auc": 0.8255,
+          "val_roc_auc": 0.9828,
+          "gap": 0.1006,
+          "fit_seconds": 0.03
+        },
+        {
+          "id": "logistic_regression(C=1.0)",
+          "family": "logistic_regression",
+          "params": {
+            "C": 1.0
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "C",
+          "capacity": 1.0,
+          "fold_val_pr_auc": [
+            0.9889,
+            0.9879,
+            0.989,
+            0.9789
+          ],
+          "fold_train_pr_auc": [
+            0.9954,
+            0.9978,
+            0.998,
+            0.9982
+          ],
+          "val_pr_auc": 0.9862,
+          "val_pr_auc_sd": 0.0049,
+          "train_pr_auc": 0.9973,
+          "val_roc_auc": 0.9973,
+          "gap": 0.0111,
+          "fit_seconds": 0.03
+        },
+        {
+          "id": "gradient_boosting(max_iter=20)",
+          "family": "gradient_boosting",
+          "params": {
+            "max_iter": 20
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "max_iter",
+          "capacity": 20,
+          "fold_val_pr_auc": [
+            0.9914,
+            0.9149,
+            0.9913,
+            0.9867
+          ],
+          "fold_train_pr_auc": [
+            0.9993,
+            0.9982,
+            0.9982,
+            0.9998
+          ],
+          "val_pr_auc": 0.9711,
+          "val_pr_auc_sd": 0.0375,
+          "train_pr_auc": 0.9989,
+          "val_roc_auc": 0.9929,
+          "gap": 0.0278,
+          "fit_seconds": 0.04
+        },
+        {
+          "id": "gradient_boosting(max_iter=400)",
+          "family": "gradient_boosting",
+          "params": {
+            "max_iter": 400
+          },
+          "supervised": true,
+          "anchor": false,
+          "capacity_knob": "max_iter",
+          "capacity": 400,
+          "fold_val_pr_auc": [
+            1.0,
+            0.9448,
+            0.9892,
+            0.9948
+          ],
+          "fold_train_pr_auc": [
+            1.0,
+            0.9982,
+            0.9983,
+            0.9999
+          ],
+          "val_pr_auc": 0.9822,
+          "val_pr_auc_sd": 0.0253,
+          "train_pr_auc": 0.9991,
+          "val_roc_auc": 0.9958,
+          "gap": 0.0169,
+          "fit_seconds": 0.45
+        }
+      ],
+      "best_deployable": {
+        "id": "isolation_forest(n_estimators=600,max_samples=256)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 600,
+          "max_samples": 256
+        },
+        "train_pr_auc": 0.975,
+        "val_pr_auc": 0.9622,
+        "val_pr_auc_sd": 0.0202,
+        "gap": 0.0128
+      },
+      "indistinguishable_from_best": [
+        "isolation_forest(n_estimators=600,max_samples=256)",
+        "isolation_forest(n_estimators=100,max_samples=256)",
+        "isolation_forest(n_estimators=300,max_samples=256)"
+      ],
+      "selected": {
+        "id": "isolation_forest(n_estimators=100,max_samples=256)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 100,
+          "max_samples": 256
+        },
+        "train_pr_auc": 0.975,
+        "val_pr_auc": 0.96,
+        "val_pr_auc_sd": 0.0176,
+        "gap": 0.015
+      },
+      "best_supervised_reference": {
+        "id": "logistic_regression(C=1.0)",
+        "family": "logistic_regression",
+        "params": {
+          "C": 1.0
+        },
+        "train_pr_auc": 0.9973,
+        "val_pr_auc": 0.9862,
+        "val_pr_auc_sd": 0.0049,
+        "gap": 0.0111
+      },
+      "headroom_vs_supervised_pr_auc": 0.0262
+    }
+  }
+}

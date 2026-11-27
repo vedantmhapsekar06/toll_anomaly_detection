@@ -8,9 +8,18 @@ Design
    corridor, make trips along real Maharashtra highway corridors. Plaza
    crossing times follow distance / speed, so every normal tag moves
    physically plausibly. Traffic follows hourly and weekday profiles.
-2. Anomalies (~5%) are injected with variation, never one fixed pattern.
-3. A QA step re-derives the detection rules from the finished data and
-   asserts they match the injected labels exactly.
+2. Legitimate messiness that detectors must NOT flag: random 50% concessions,
+   local-pass tags that are consistently discounted, a genuine tariff revision at
+   three plazas, axle-sensor misreads (1% of passages), per-plaza clock skew,
+   isolated telemetry blips, short benign load surges and longer busy periods.
+3. Anomalies (~13% of rows) are injected with variation, never one fixed pattern.
+   Clones can land anywhere in a tag's history (before OR after genuine passages),
+   floods overlap benign spikes in amplitude and only differ in how long they last,
+   and fare tampering includes mild deviations.
+4. Labels come from the injection process, NOT from the detection rules. The QA step
+   therefore checks that the generator is internally valid (injected rows satisfy their
+   definition, normal traffic stays physically plausible); it does not assert that a
+   rule reproduces the labels.
 
 Plaza names / coordinates are approximate and illustrative.
 """
@@ -42,7 +51,16 @@ ROAD_FACTOR = 1.25          # road distance ~ 1.25 x straight-line distance
 MIN_TRIP_GAP_S = 3600       # a tag starts a new trip >= 1 h after the last one ended
 REPOSITION_KMH = 50         # conservative speed used to budget travel between trips
 DISCOUNT_RATE = 0.08        # share of normal rows billed at 50% (return-journey concession)
-BENIGN_SPIKE_RATE = 0.003   # legit telemetry spikes (not attacks) -> honest false positives
+BENIGN_SPIKE_RATE = 0.003   # isolated legit telemetry blips (single rows, not attacks)
+N_SURGES = 40               # short benign load surges: 2-3 consecutive rows at one plaza
+N_RUSHES = 12               # longer benign busy periods: 15-30 rows at 2-3.5x normal load
+AXLE_ERROR_RATE = 0.01      # lane sensor misreads the axle count on 1% of passages
+PASS_TAG_SHARE = 0.05       # share of car/lcv tags on a local pass ...
+PASS_RATIO = 0.6            # ... billed at 60% on every crossing (legit, consistent per tag)
+REVISION_PLAZAS = ["P03", "P11", "P16"]   # genuine tariff revision (+10%) at these plazas ...
+REVISION_DAY = 15                         # ... from this day of the month onwards
+REVISION_FACTOR = 1.10
+PLAZA_SKEW_S = 30           # per-plaza clock offset (std, seconds)
 
 N_MISMATCH_TAGS = 55        # tags that carry a lower-class tag than their axles
 N_CLONE = 1000
@@ -126,6 +144,9 @@ def build_tags() -> pd.DataFrame:
             k += 1
     tags = pd.DataFrame(rows)
     tags["declared_class"] = tags["true_class"]
+    # local-pass tags: legitimately and consistently discounted (cars and lcvs only)
+    lite = tags["true_class"].isin(["car", "lcv"]).to_numpy()
+    tags["pass_ratio"] = np.where(lite & (rng.random(len(tags)) < PASS_TAG_SHARE), PASS_RATIO, 1.0)
 
     # class-mismatch tags: a heavier vehicle running on a lower-class tag
     heavy = tags.index[tags["true_class"] != "car"].to_numpy()
@@ -141,6 +162,18 @@ def draw_telemetry(hours):
     req = np.round(rng.lognormal(np.log(55 * HOUR_LOAD[hours]), 0.30))
     cpu = np.clip(10 + 0.2 * req + rng.normal(0, 4, len(hours)), 5, 75).round(2)
     return req, cpu
+
+
+def consecutive_window(plaza_arr, avail, k):
+    """k consecutive (in time) available rows at one plaza, plaza picked by traffic share.
+    Returns (plaza_id, row positions) or (None, None) if no plaza has enough rows."""
+    counts = pd.Series(plaza_arr[avail]).value_counts()
+    pid = str(rng.choice(counts.index, p=_norm(counts.to_numpy())))
+    arr = np.flatnonzero(avail & (plaza_arr == pid))
+    if len(arr) <= k:
+        return None, None
+    pos = int(rng.integers(0, len(arr) - k))
+    return pid, arr[pos:pos + k]
 
 
 def gateway_ip(plaza_ids, lanes):
@@ -203,26 +236,57 @@ def simulate_trips(tags: pd.DataFrame, plazas: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["tag_id", "plaza_id", "ts_sec"])
 
 
-def assemble_normal(trips: pd.DataFrame, tags: pd.DataFrame, plazas: pd.DataFrame) -> pd.DataFrame:
+def assemble_normal(trips: pd.DataFrame, tags: pd.DataFrame, plazas: pd.DataFrame, skew: pd.Series) -> pd.DataFrame:
     t = tags.set_index("tag_id")
     df = trips.copy()
-    df["timestamp"] = pd.to_datetime(df["ts_sec"].round().astype("int64"), unit="s")
+    ts = df["ts_sec"] + df["plaza_id"].map(skew)              # each plaza's clock is slightly off
+    df["timestamp"] = pd.to_datetime(ts.round().astype("int64"), unit="s")
     df = df.drop(columns="ts_sec")
     df["declared_class"] = df["tag_id"].map(t["declared_class"])
     df["axle_count"] = df["tag_id"].map(t["axle_count"]).astype(int)
     df = df.sort_values(["timestamp", "tag_id"], kind="stable").reset_index(drop=True)
-
     n = len(df)
+
+    # lane sensors occasionally misread the axle count (+-1); the tag is unchanged
+    err = rng.random(n) < AXLE_ERROR_RATE
+    df.loc[err, "axle_count"] = np.maximum(2, df.loc[err, "axle_count"] + rng.choice([-1, 1], err.sum()))
+
+    # legitimate billing: tariff x (random 50% concession | local-pass discount) x tariff revision
     factor = df["plaza_id"].map(plazas.set_index("plaza_id")["fare_factor"])
     ratio = np.where(rng.random(n) < DISCOUNT_RATE, 0.5, 1.0)
+    pass_ratio = df["tag_id"].map(t["pass_ratio"]).to_numpy(dtype=float)
+    ratio = np.where(pass_ratio < 1.0, pass_ratio, ratio)
+    revised = (df["plaza_id"].isin(REVISION_PLAZAS) &
+               (df["timestamp"] >= START + pd.Timedelta(days=REVISION_DAY))).to_numpy()
+    ratio = ratio * np.where(revised, REVISION_FACTOR, 1.0)
     df["amount_INR"] = cfg.round_fare(cfg.expected_fare(df["declared_class"], factor) * ratio)
 
     df["lane_id"] = rng.integers(1, 7, n)
     df["ip_address"] = gateway_ip(df["plaza_id"], df["lane_id"])
     req, cpu = draw_telemetry(df["timestamp"].dt.hour.to_numpy())
+    plaza_arr = df["plaza_id"].to_numpy()
+    avail = np.ones(n, dtype=bool)
+
+    # benign: isolated single-row blips (amplitude deliberately overlaps real floods)
     spike = rng.random(n) < BENIGN_SPIKE_RATE
-    req[spike] = np.round(rng.uniform(250, 450, spike.sum()))
-    cpu[spike] = rng.uniform(45, 70, spike.sum()).round(2)
+    req[spike] = np.round(rng.uniform(250, 1500, spike.sum()))
+    cpu[spike] = rng.uniform(45, 92, spike.sum()).round(2)
+    # benign: short load surges, 2-3 consecutive rows at one plaza
+    for _ in range(N_SURGES):
+        _, sel = consecutive_window(plaza_arr, avail, int(rng.integers(2, 4)))
+        if sel is None:
+            continue
+        avail[sel] = False
+        req[sel] = np.round(rng.uniform(300, 900, len(sel)))
+        cpu[sel] = rng.uniform(55, 90, len(sel)).round(2)
+    # benign: longer busy periods, moderately elevated load for 15-30 rows
+    for _ in range(N_RUSHES):
+        _, sel = consecutive_window(plaza_arr, avail, int(rng.integers(15, 31)))
+        if sel is None:
+            continue
+        avail[sel] = False
+        req[sel] = np.round(req[sel] * rng.uniform(2.0, 3.5, len(sel)))
+        cpu[sel] = np.clip(10 + 0.2 * req[sel] + rng.normal(0, 4, len(sel)), 5, 90).round(2)
     df["req_per_min"] = req
     df["cpu_usage_percent"] = cpu
 
@@ -235,35 +299,34 @@ def assemble_normal(trips: pd.DataFrame, tags: pd.DataFrame, plazas: pd.DataFram
 # ----------------------------------------------------------------------------
 # Anomaly injection
 # ----------------------------------------------------------------------------
-def inject(df: pd.DataFrame, plazas: pd.DataFrame) -> pd.DataFrame:
+def inject(df: pd.DataFrame, plazas: pd.DataFrame, skew: pd.Series) -> pd.DataFrame:
     p = plazas.set_index("plaza_id")
     fare_factor = df["plaza_id"].map(p["fare_factor"]).to_numpy()
     expected = cfg.expected_fare(df["declared_class"], fare_factor)
     free = (df["anomaly_type"] == "none").to_numpy(copy=True)  # writable copy (pandas CoW)
 
-    # --- fare_tampering: billed amount deviates from the expected fare -------
+    # --- fare_tampering: billed amount deviates from the tariff, mildly or badly --------
     idx = rng.choice(np.flatnonzero(free), N_FARE, replace=False)
     free[idx] = False
-    kind = rng.choice(3, N_FARE, p=[0.35, 0.35, 0.30])
-    ratio = np.where(kind == 0, 0.0,
-                     np.where(kind == 1, rng.uniform(0.05, 0.35, N_FARE), rng.uniform(1.4, 3.0, N_FARE)))
+    kind = rng.choice(5, N_FARE, p=[0.20, 0.25, 0.15, 0.25, 0.15])
+    ratio = np.select(
+        [kind == 0, kind == 1, kind == 2, kind == 3],
+        [np.zeros(N_FARE), rng.uniform(0.05, 0.35, N_FARE),      # free pass, heavy under-charge
+         rng.uniform(0.65, 0.90, N_FARE),                        # mild under-charge
+         rng.uniform(1.10, 1.50, N_FARE)],                       # mild over-charge
+        default=rng.uniform(1.5, 3.0, N_FARE))                   # heavy over-charge
     df.loc[idx, "amount_INR"] = cfg.round_fare(expected[idx] * ratio)
     df.loc[idx, "anomaly_type"] = "fare_tampering"
 
-    # --- api_flood: telemetry spikes over a run of consecutive transactions at one plaza
+    # --- api_flood: SUSTAINED telemetry surge over 5-12 consecutive rows at one plaza ----
     plaza_arr = df["plaza_id"].to_numpy()
-    counts = pd.Series(plaza_arr[free]).value_counts()
     for _ in range(N_BURSTS):
-        pid = str(rng.choice(counts.index, p=_norm(counts.to_numpy())))
-        arr = np.flatnonzero(free & (plaza_arr == pid))
-        k = int(rng.integers(5, 13))
-        if len(arr) <= k:
+        _, sel = consecutive_window(plaza_arr, free, int(rng.integers(5, 13)))
+        if sel is None:
             continue
-        pos = int(rng.integers(0, len(arr) - k))
-        sel = arr[pos:pos + k]
         free[sel] = False
-        df.loc[sel, "req_per_min"] = np.round(np.exp(rng.uniform(np.log(800), np.log(5000), k)))
-        df.loc[sel, "cpu_usage_percent"] = rng.uniform(85, 99, k).round(2)
+        df.loc[sel, "req_per_min"] = np.round(np.exp(rng.uniform(np.log(400), np.log(5000), len(sel))))
+        df.loc[sel, "cpu_usage_percent"] = rng.uniform(60, 99, len(sel)).round(2)
         attacker = ".".join(str(x) for x in (rng.choice([45, 103, 139, 185]), *rng.integers(1, 255, 3)))
         df.loc[sel, "ip_address"] = attacker
         df.loc[sel, "anomaly_type"] = "api_flood"
@@ -275,30 +338,34 @@ def inject(df: pd.DataFrame, plazas: pd.DataFrame) -> pd.DataFrame:
     dups["timestamp"] = dups["timestamp"] + pd.to_timedelta(rng.integers(3, 56, N_DUP), unit="s").to_numpy()
     dups["anomaly_type"] = "duplicate_charge"
 
-    # --- cloned_tag: the tag's LAST legit transaction, then a far plaza minutes later
-    last_pos = df.groupby("tag_id")["timestamp"].idxmax().to_numpy()
-    cand = last_pos[free[last_pos]]
-    cand = cand[(df["timestamp"].iloc[cand] < END - pd.Timedelta(hours=6)).to_numpy()]
-    cand = rng.choice(cand, min(N_CLONE, len(cand)), replace=False)
-
+    # --- cloned_tag: a genuine passage somewhere in the tag's history, plus an impossible
+    #     passage far away, either BEFORE or AFTER it, so genuine passages can follow a clone
     coord = p[["lat", "lon"]]
+    pool = rng.permutation(np.flatnonzero(free))
     clones = []
-    for i in cand:
+    for i in pool:
+        if len(clones) >= N_CLONE:
+            break
         base = df.iloc[i]
         a = base["plaza_id"]
         dist = cfg.haversine_km(coord.at[a, "lat"], coord.at[a, "lon"], coord["lat"], coord["lon"])
         far = dist.index[dist.to_numpy() >= 100]
         b = str(rng.choice(far))
         speed = rng.uniform(200, 900)                         # impossible implied speed, km/h
-        delta = float(dist[b]) / speed * 3600
+        delta = float(dist[b]) / speed * 3600 + skew[b] - skew[a]
+        sign = 1 if rng.random() < 0.5 else -1
+        ts = base["timestamp"] + pd.Timedelta(seconds=round(sign * delta))
+        if not (START <= ts < END):
+            continue
         row = base.copy()
         row["plaza_id"] = b
-        row["timestamp"] = base["timestamp"] + pd.Timedelta(seconds=round(delta))
+        row["timestamp"] = ts
         row["lane_id"] = int(rng.integers(1, 7))
         row["ip_address"] = gateway_ip([b], [row["lane_id"]])[0]
         row["amount_INR"] = float(cfg.expected_fare([row["declared_class"]], [p.at[b, "fare_factor"]])[0])
         row["anomaly_type"] = "cloned_tag"
         clones.append(row)
+        free[i] = False
     clones = pd.DataFrame(clones)
     req, cpu = draw_telemetry(clones["timestamp"].dt.hour.to_numpy())
     clones["req_per_min"], clones["cpu_usage_percent"] = req, cpu
@@ -313,70 +380,94 @@ def inject(df: pd.DataFrame, plazas: pd.DataFrame) -> pd.DataFrame:
 # QA: re-derive detection rules from the data and compare with injected labels
 # ----------------------------------------------------------------------------
 def qa_checks(df: pd.DataFrame, plazas: pd.DataFrame) -> None:
-    d = df.merge(plazas[["plaza_id", "lat", "lon"]], on="plaza_id", how="left")
+    """Generator validity. Labels are NOT re-derived from the detection rules (that would be
+    circular); these checks only confirm the data is what the generator claims it is."""
+    # 1. normal traffic must be physically plausible, or "impossible travel" means nothing
+    d = df[df["anomaly_type"] != "cloned_tag"].merge(plazas[["plaza_id", "lat", "lon"]], on="plaza_id")
     d = d.sort_values(["tag_id", "timestamp"], kind="stable")
     g = d.groupby("tag_id")
     dist = cfg.haversine_km(g["lat"].shift(), g["lon"].shift(), d["lat"], d["lon"])
     hours = (d["timestamp"] - g["timestamp"].shift()).dt.total_seconds() / 3600
-    speed = dist / hours.clip(lower=1 / 3600)
-    impossible = set(d.loc[speed > cfg.MAX_SPEED_KMH, "txn_id"])
+    top = float((dist / hours.clip(lower=1 / 3600)).max())
+    assert top < cfg.MAX_SPEED_KMH, f"normal traffic reaches {top:.0f} km/h"
 
-    d2 = df.sort_values(["tag_id", "plaza_id", "timestamp"], kind="stable")
-    gap = d2.groupby(["tag_id", "plaza_id"])["timestamp"].diff().dt.total_seconds()
-    dup = set(d2.loc[gap < cfg.DUPLICATE_WINDOW_S, "txn_id"])
+    # 2. injected rows satisfy their own definition
+    dup = df[df["anomaly_type"] == "duplicate_charge"]
+    assert len(dup) == N_DUP and dup["amount_INR"].gt(-1).all()
+    assert (df.loc[df["anomaly_type"] == "api_flood", "req_per_min"] >= 400).all()
+    assert (df["anomaly_type"] == "fare_tampering").sum() == N_FARE
+    assert (df["anomaly_type"] == "cloned_tag").sum() == N_CLONE
 
-    mism = set(df.loc[cfg.axle_to_class(df["axle_count"]) != df["declared_class"], "txn_id"])
-
-    lab = lambda name: set(df.loc[df["anomaly_type"] == name, "txn_id"])  # noqa: E731
-    checks = {"cloned_tag": (impossible, lab("cloned_tag")),
-              "duplicate_charge": (dup, lab("duplicate_charge")),
-              "class_mismatch": (mism, lab("class_mismatch"))}
-    for name, (found, truth) in checks.items():
-        assert found == truth, f"QA failed for {name}: rule found {len(found)}, labels {len(truth)}, " \
-                               f"diff {len(found ^ truth)}"
-    assert df["timestamp"].min() >= START and df["timestamp"].max() < END + pd.Timedelta(days=1)
+    # 3. bookkeeping
     assert df["txn_id"].is_unique
-    print("QA passed: rule outputs match injected labels for cloned_tag, duplicate_charge, class_mismatch")
+    assert df["timestamp"].min() >= START - pd.Timedelta(minutes=10)
+    assert df["timestamp"].max() < END + pd.Timedelta(days=1)
+    print(f"QA passed: normal traffic tops out at {top:.0f} km/h (limit {cfg.MAX_SPEED_KMH}), "
+          f"injected counts and ranges as designed")
 
 
 # ----------------------------------------------------------------------------
-# Demo file: whole-tag sample so cloned/duplicate pairs stay intact
+# Demo file: the last DEMO_DAYS of FULL traffic. A real upload is a time slice of all
+# plazas, not a sample of tags, and the flood and fare detectors read each plaza's
+# consecutive traffic. This window falls inside train.py's held-out test period, so the
+# "live check" on the demo is a genuine out-of-sample result.
 # ----------------------------------------------------------------------------
-def make_demo(df: pd.DataFrame, n_tags: int = 200, per_label: int = 6) -> pd.DataFrame:
-    chosen = set()
-    for lab in cfg.ANOMALY_TYPES:
-        pool = df.loc[df["anomaly_type"] == lab, "tag_id"].unique()
-        chosen |= set(rng.choice(pool, min(per_label, len(pool)), replace=False))
-    rest = np.setdiff1d(df["tag_id"].unique(), list(chosen))
-    chosen |= set(rng.choice(rest, max(0, n_tags - len(chosen)), replace=False))
-    return df[df["tag_id"].isin(chosen)].reset_index(drop=True)
+DEMO_DAYS = 4
+
+
+def make_demo(df: pd.DataFrame) -> pd.DataFrame:
+    return df[df["timestamp"] >= END - pd.Timedelta(days=DEMO_DAYS)].reset_index(drop=True)
 
 
 # ----------------------------------------------------------------------------
-def main() -> None:
-    cfg.DATA_DIR.mkdir(parents=True, exist_ok=True)
+COLS = ["txn_id", "tag_id", "plaza_id", "lane_id", "timestamp", "declared_class", "axle_count",
+        "amount_INR", "ip_address", "req_per_min", "cpu_usage_percent", "anomaly_type"]
+
+
+def generate(seed: int = cfg.SEED, verbose: bool = True):
+    """Build one complete synthetic world and return (transactions, plazas).
+    Pure function of `seed`: nothing is written, so the pipeline can create several
+    independent worlds (new vehicles, trips and anomalies) to test the models on data they
+    have never seen."""
+    global rng
+    rng = np.random.default_rng(seed)
     plazas = build_plazas()
     tags = build_tags()
+    skew = pd.Series(rng.normal(0, PLAZA_SKEW_S, len(plazas)), index=plazas["plaza_id"])
     trips = simulate_trips(tags, plazas)
-    df = assemble_normal(trips, tags, plazas)
-    df = inject(df, plazas)
-
-    cols = ["txn_id", "tag_id", "plaza_id", "lane_id", "timestamp", "declared_class", "axle_count",
-            "amount_INR", "ip_address", "req_per_min", "cpu_usage_percent", "anomaly_type"]
-    df = df[cols].copy()
+    df = assemble_normal(trips, tags, plazas, skew)
+    df = inject(df, plazas, skew)
+    df = df[COLS].copy()
     df["amount_INR"] = df["amount_INR"].round().astype(int)
     df["req_per_min"] = df["req_per_min"].round().astype(int)
     df["lane_id"] = df["lane_id"].astype(int)
+    if verbose:
+        qa_checks(df, plazas)
+    else:
+        import contextlib, io
+        with contextlib.redirect_stdout(io.StringIO()):
+            qa_checks(df, plazas)
+    return df, plazas
 
-    qa_checks(df, plazas)
 
-    df.to_csv(cfg.TXN_CSV, index=False, date_format="%Y-%m-%d %H:%M:%S")
-    plazas.to_csv(cfg.PLAZA_CSV, index=False)
+def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description="Generate the synthetic TollGuard dataset")
+    ap.add_argument("--seed", type=int, default=cfg.SEED)
+    ap.add_argument("--out-dir", type=Path, default=cfg.DATA_DIR,
+                    help="where to write the CSVs (default: ml/data)")
+    args = ap.parse_args()
+    out = args.out_dir
+    out.mkdir(parents=True, exist_ok=True)
+
+    df, plazas = generate(args.seed)
+    df.to_csv(out / cfg.TXN_CSV.name, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    plazas.to_csv(out / cfg.PLAZA_CSV.name, index=False)
     demo = make_demo(df)
-    demo.to_csv(cfg.DEMO_CSV, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    demo.to_csv(out / cfg.DEMO_CSV.name, index=False, date_format="%Y-%m-%d %H:%M:%S")
 
-    print(f"\nSaved {len(df):,} rows -> {cfg.TXN_CSV}")
-    print(f"Saved {len(demo):,} rows -> {cfg.DEMO_CSV}")
+    print(f"\nSaved {len(df):,} rows -> {out / cfg.TXN_CSV.name}")
+    print(f"Saved {len(demo):,} rows -> {out / cfg.DEMO_CSV.name}")
     print(f"Unique tags: {df['tag_id'].nunique():,} | plazas: {df['plaza_id'].nunique()} | "
           f"{df['timestamp'].min()} to {df['timestamp'].max()}")
     vc = df["anomaly_type"].value_counts()
@@ -384,8 +475,6 @@ def main() -> None:
     for k, v in vc.items():
         print(f"  {k:<18}{v:>7,}  {v / len(df):6.2%}")
     print(f"  anomaly rate: {(df['anomaly_type'] != 'none').mean():.2%}")
-    print("\nVehicle class mix (by axles):")
-    print(pd.Series(cfg.axle_to_class(df["axle_count"])).value_counts(normalize=True).round(3).to_string())
 
 
 if __name__ == "__main__":

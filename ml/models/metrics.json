@@ -3,95 +3,171 @@
     "sklearn": "1.9.1",
     "seed": 42,
     "split": {
-      "train": 30196,
-      "calibration": 7550,
-      "test": 12582,
-      "test_starts": "2026-10-23 19:24:15"
-    }
+      "train": 34788,
+      "calibration": 4970,
+      "test": 9940,
+      "test_starts": "2026-10-24 20:27:54"
+    },
+    "selected_models": {
+      "api_flood": {
+        "id": "isolation_forest(n_estimators=300,max_samples=64)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 300,
+          "max_samples": 64
+        }
+      },
+      "fare_anomaly": {
+        "id": "isolation_forest(n_estimators=100,max_samples=256)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 100,
+          "max_samples": 256
+        }
+      }
+    },
+    "anomaly_rate": 0.1325
   },
   "models": {
     "api_flood": {
-      "n_test": 12582,
-      "positives": 274,
+      "selected_model": {
+        "id": "isolation_forest(n_estimators=300,max_samples=64)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 300,
+          "max_samples": 64
+        }
+      },
+      "n_test": 9940,
+      "positives": 230,
       "calibrated_p_ge_0.5": {
-        "precision": 0.9716,
-        "recall": 1.0,
-        "f1": 0.9856,
-        "tp": 274,
-        "fp": 8,
-        "fn": 0,
-        "tn": 12300
+        "precision": 0.9689,
+        "recall": 0.9478,
+        "f1": 0.9582,
+        "tp": 218,
+        "fp": 7,
+        "fn": 12,
+        "tn": 9703
       },
       "baseline_iforest_default_threshold": {
-        "precision": 0.1348,
+        "precision": 0.1777,
         "recall": 1.0,
-        "f1": 0.2375,
-        "tp": 274,
-        "fp": 1759,
+        "f1": 0.3018,
+        "tp": 230,
+        "fp": 1064,
         "fn": 0,
-        "tn": 10549
+        "tn": 8646
       },
-      "roc_auc": 0.9996,
-      "pr_auc": 0.9783,
+      "baseline_simple_rule": {
+        "precision": 0.8231,
+        "recall": 0.9913,
+        "f1": 0.8994,
+        "tp": 228,
+        "fp": 49,
+        "fn": 2,
+        "tn": 9661,
+        "rule": "req_per_min >= 419"
+      },
+      "roc_auc": 0.9995,
+      "pr_auc": 0.9905,
       "recall_by_label": {
         "api_flood": {
-          "n": 274,
-          "recall": 1.0
+          "n": 230,
+          "recall": 0.9478
         }
       },
-      "false_positive_rate": 0.0006
+      "false_positive_rate": 0.0007,
+      "precision_at_prevalence": {
+        "1pct": 0.9254,
+        "0.1pct": 0.5513
+      },
+      "calibration_prevalence": 0.0553,
+      "event_level": {
+        "events": 30,
+        "detected": 30,
+        "recall": 1.0
+      }
     },
     "fare_anomaly": {
-      "n_test": 12582,
-      "positives": 633,
-      "calibrated_p_ge_0.5": {
-        "precision": 1.0,
-        "recall": 0.9874,
-        "f1": 0.9936,
-        "tp": 625,
-        "fp": 0,
-        "fn": 8,
-        "tn": 11949
-      },
-      "baseline_iforest_default_threshold": {
-        "precision": 0.6486,
-        "recall": 1.0,
-        "f1": 0.7868,
-        "tp": 633,
-        "fp": 343,
-        "fn": 0,
-        "tn": 11606
-      },
-      "roc_auc": 0.9998,
-      "pr_auc": 0.9967,
-      "recall_by_label": {
-        "class_mismatch": {
-          "n": 314,
-          "recall": 1.0
-        },
-        "fare_tampering": {
-          "n": 319,
-          "recall": 0.9749
+      "selected_model": {
+        "id": "isolation_forest(n_estimators=100,max_samples=256)",
+        "family": "isolation_forest",
+        "params": {
+          "n_estimators": 100,
+          "max_samples": 256
         }
       },
-      "false_positive_rate": 0.0
+      "n_test": 9940,
+      "positives": 282,
+      "calibrated_p_ge_0.5": {
+        "precision": 0.9962,
+        "recall": 0.922,
+        "f1": 0.9576,
+        "tp": 260,
+        "fp": 1,
+        "fn": 22,
+        "tn": 9657
+      },
+      "baseline_iforest_default_threshold": {
+        "precision": 0.1377,
+        "recall": 1.0,
+        "f1": 0.2421,
+        "tp": 282,
+        "fp": 1766,
+        "fn": 0,
+        "tn": 7892
+      },
+      "baseline_simple_rule": {
+        "precision": 0.1388,
+        "recall": 1.0,
+        "f1": 0.2437,
+        "tp": 282,
+        "fp": 1750,
+        "fn": 0,
+        "tn": 7908,
+        "rule": "amount not within 5% of 100% or 50% of tariff"
+      },
+      "roc_auc": 0.9984,
+      "pr_auc": 0.9796,
+      "recall_by_label": {
+        "fare_tampering": {
+          "n": 282,
+          "recall": 0.922
+        }
+      },
+      "false_positive_rate": 0.0001,
+      "precision_at_prevalence": {
+        "1pct": 0.9836,
+        "0.1pct": 0.856
+      },
+      "calibration_prevalence": 0.0296,
+      "baseline_context_rule": {
+        "precision": 0.7084,
+        "recall": 0.9823,
+        "f1": 0.8232,
+        "tp": 277,
+        "fp": 114,
+        "fn": 5,
+        "tn": 9544,
+        "rule": "not standard (100%/50%) vs the tag's history nor the plaza's level"
+      }
     },
     "rules": {
       "cloned_tag": {
-        "flagged": 1000,
+        "flagged": 1083,
         "labelled": 1000,
         "true_positives": 1000,
-        "precision": 1.0,
+        "precision": 0.9234,
         "recall": 1.0,
-        "probability_used": 0.999
+        "probability_used": 0.9989
       },
       "class_mismatch": {
-        "flagged": 1303,
-        "labelled": 1303,
-        "true_positives": 1303,
+        "flagged": 55,
+        "labelled": 55,
+        "true_positives": 55,
         "precision": 1.0,
         "recall": 1.0,
-        "probability_used": 0.9992
+        "probability_used": 0.9825
       },
       "duplicate_charge": {
         "flagged": 1500,
@@ -100,6 +176,64 @@
         "precision": 1.0,
         "recall": 1.0,
         "probability_used": 0.9993
+      }
+    }
+  },
+  "rule_detail": {
+    "cloned_tag": {
+      "flagged": 917,
+      "true_positives": 917,
+      "precision": 1.0
+    },
+    "cloned_tag_ambiguous": {
+      "flagged": 166,
+      "true_positives": 83,
+      "precision": 0.5
+    },
+    "cloned_tag_tag_level": {
+      "flagged": 816,
+      "labelled": 816,
+      "true_positives": 816,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "rule_sensitivity": {
+    "cloned_tag": {
+      "90": {
+        "flagged": 1067,
+        "precision": 0.9372,
+        "recall": 1.0
+      },
+      "100": {
+        "flagged": 1070,
+        "precision": 0.9346,
+        "recall": 1.0
+      },
+      "120": {
+        "flagged": 1076,
+        "precision": 0.9294,
+        "recall": 1.0
+      },
+      "140": {
+        "flagged": 1083,
+        "precision": 0.9234,
+        "recall": 1.0
+      },
+      "160": {
+        "flagged": 1093,
+        "precision": 0.9149,
+        "recall": 1.0
+      },
+      "200": {
+        "flagged": 1101,
+        "precision": 0.9046,
+        "recall": 0.996
+      },
+      "300": {
+        "flagged": 1037,
+        "precision": 0.891,
+        "recall": 0.924
       }
     }
   }

@@ -236,6 +236,111 @@
     $("an-days").innerHTML = dayCols(s.by_day);
   }
 
+  // ---------- model evidence: selection, fit diagnostics, controls ----------
+  const f3 = (v) => (v == null ? "n/a" : Number(v).toFixed(3));
+  const famName = (f) => String(f || "").replace(/_/g, " ");
+
+  function lineChart(title, xs, series, opts = {}) {
+    const W = 300, H = 150, L = 38, R = 10, T = 8, B = 26;
+    const all = series.flatMap((s) => s.values).filter((v) => v != null);
+    let lo = opts.min != null ? opts.min : Math.min(...all), hi = opts.max != null ? opts.max : Math.max(...all);
+    if (hi - lo < 0.02) { if (opts.max != null) lo = hi - 0.02; else { lo -= 0.01; hi += 0.01; } }
+    const x = (i) => L + (xs.length === 1 ? 0 : (i * (W - L - R)) / (xs.length - 1));
+    const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+    const lines = series.map((s) => {
+      const pts = s.values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+      return `<polyline fill="none" stroke="${s.color}" stroke-width="2" points="${pts}"/>` +
+        s.values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="${s.color}"/>`).join("");
+    }).join("");
+    const xl = xs.map((v, i) => `<text x="${x(i).toFixed(1)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="#4B5563">${esc(v)}</text>`).join("");
+    const mark = opts.mark == null ? "" : `<line x1="${x(opts.mark)}" x2="${x(opts.mark)}" y1="${T}" y2="${H - B}" stroke="#9CA3AF" stroke-dasharray="3 3"/>`;
+    return `<div class="chartbox"><h4>${esc(title)}</h4>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">
+        <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#E5E7EB"/><line x1="${L}" x2="${L}" y1="${T}" y2="${H - B}" stroke="#E5E7EB"/>
+        <text x="${L - 4}" y="${T + 8}" font-size="9" text-anchor="end" fill="#4B5563">${hi.toFixed(2)}</text>
+        <text x="${L - 4}" y="${H - B}" font-size="9" text-anchor="end" fill="#4B5563">${lo.toFixed(2)}</text>
+        ${mark}${lines}${xl}</svg>
+      <div class="legend">${series.map((s) => `<span><i class="dot" style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div></div>`;
+  }
+
+  function selectionCard(sel) {
+    const blocks = Object.entries(sel.detectors).map(([name, d]) => {
+      const rows = [...d.candidates].filter((c) => !c.error)
+        .sort((a, b) => b.val_pr_auc - a.val_pr_auc).map((c) => {
+          const isSel = c.id === d.selected.id;
+          const kind = c.supervised ? "supervised reference" : c.anchor ? "low-capacity anchor" : "unsupervised";
+          return `<tr class="${isSel ? "selrow" : ""}"><td>${isSel ? "<b>" : ""}${esc(c.id)}${isSel ? "</b> <span class=\"tg\">selected</span>" : ""}</td>
+            <td class="sub">${kind}</td><td>${f3(c.val_pr_auc)} &plusmn; ${f3(c.val_pr_auc_sd)}</td><td>${f3(c.train_pr_auc)}</td><td>${(c.gap >= 0 ? "+" : "") + f3(c.gap)}</td><td>${c.fit_seconds}s</td></tr>`;
+        }).join("");
+      return `<div class="h3">${esc(name)}: headroom over the best supervised reference ${(d.headroom_vs_supervised_pr_auc >= 0 ? "+" : "") + f3(d.headroom_vs_supervised_pr_auc)} PR-AUC</div>
+        <div class="scroll"><table class="mtable"><thead><tr><th>Candidate</th><th>Type</th><th>Validation PR-AUC (4 folds)</th><th>Train PR-AUC</th><th>Gap</th><th>Fit time</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join("");
+    return `<div class="card sect"><h2>Model selection</h2>
+      <div class="note">Every candidate is fitted on everything before a time chunk and validated on that chunk, four times over, inside the fit window (the test window is never touched). The winner is the cheapest deployable model that is not significantly worse than the best. Only unsupervised models can be deployed, because real toll data has no labels until analysts confirm alerts. Supervised models are listed only to show how much headroom the label-free approach leaves. Density-based models (LOF, GMM, One-Class SVM) lose badly because the anomalies recur in the training data and get absorbed as a normal mode, while Isolation Forest&rsquo;s random subsampling resists that.</div>${blocks}</div>`;
+  }
+
+  const CHECK_LABEL = {
+    train_test_gap: ["Train minus test gap (PR-AUC or F1)", "&le; 0.05"],
+    fresh_world_f1: ["Test F1 minus fresh-world F1", "&le; 0.05"],
+    headroom: ["Headroom vs supervised reference (PR-AUC)", "&le; 0.05"],
+    beats_baselines: ["Test F1 minus best simple baseline", "&gt; 0"],
+    capacity_saturated: ["Gain from more trees (PR-AUC)", "&le; 0.01"],
+  };
+
+  function diagnosticsCard(dg) {
+    const blocks = Object.entries(dg.detectors).map(([name, e]) => {
+      const d = e.data, good = e.verdict === "good fit";
+      const checks = Object.entries(e.checks).map(([k, c]) => {
+        const lab = CHECK_LABEL[k] || [k, ""];
+        return `<tr><td>${lab[0]}</td><td>${(c.value >= 0 && k !== "beats_baselines" ? "" : "") + f3(c.value)}</td><td>${lab[1]}</td><td class="${c.pass ? "pass" : "fail"}">${c.pass ? "pass" : "FAIL"}</td></tr>`;
+      }).join("");
+      const tt = d.train_vs_test;
+      const lc = d.learning_curve;
+      const charts = [lineChart("Learning curve (PR-AUC vs share of fit data)", lc.map((r) => Math.round(r.fraction * 100) + "%"),
+        [{ name: "train", color: "#1E3A8A", values: lc.map((r) => r.train_pr_auc) }, { name: "validation", color: "#D97706", values: lc.map((r) => r.val_pr_auc) }], { max: 1 })];
+      Object.entries(d.capacity_curves || {}).forEach(([knob, c]) => {
+        charts.push(lineChart(knob === "n_estimators" ? "Capacity: number of trees" : "Sensitivity: subsample size", c.curve.map((r) => r.value),
+          [{ name: "train", color: "#1E3A8A", values: c.curve.map((r) => r.train_pr_auc) }, { name: "validation", color: "#D97706", values: c.curve.map((r) => r.val_pr_auc) }],
+          { max: 1, mark: c.curve.findIndex((r) => r.value === c.chosen) }));
+      });
+      const ro = d.rolling_origin;
+      charts.push(lineChart("Rolling-origin windows (test F1)", ro.folds.map((r) => "w" + (r.test_chunk - 3)),
+        [{ name: "F1", color: "#166534", values: ro.folds.map((r) => r.f1) }], { max: 1 }));
+      const rr = ro.folds.map((r) => `<tr><td>${esc(String(r.test_starts).slice(0, 10))}</td><td>${num(r.train_rows)}</td><td>${pct(r.precision)}</td><td>${pct(r.recall)}</td><td>${pct(r.f1)}</td></tr>`).join("");
+      const ci = d.bootstrap_95ci;
+      return `<div class="h3">${esc(name)} <span class="sub">${esc(famName(e.data.model))}</span><span class="verdict ${good ? "v-good" : "v-bad"}">${esc(e.verdict.toUpperCase())}</span></div>
+        <div class="scroll"><table class="mtable"><thead><tr><th>Check</th><th>Result</th><th>Limit</th><th>Status</th></tr></thead><tbody>${checks}</tbody></table></div>
+        <div class="scroll"><table class="mtable"><thead><tr><th>Window</th><th>PR-AUC</th><th>F1</th><th>Precision</th><th>Recall</th></tr></thead><tbody>
+          <tr><td>Fit rows (train)</td><td>${f3(tt.train.pr_auc)}</td><td>${pct(tt.train.f1)}</td><td>${pct(tt.train.precision)}</td><td>${pct(tt.train.recall)}</td></tr>
+          <tr><td>Selection folds (validation, mean)</td><td>${f3(tt.validation_folds.pr_auc_mean)} &plusmn; ${f3(tt.validation_folds.pr_auc_sd)}</td><td></td><td></td><td></td></tr>
+          <tr><td>Test (looked at once)</td><td>${f3(tt.test.pr_auc)}</td><td>${pct(tt.test.f1)}</td><td>${pct(tt.test.precision)}</td><td>${pct(tt.test.recall)}</td></tr>
+          <tr><td>Test, 95% bootstrap interval</td><td></td><td>${pct(ci.f1[0])} to ${pct(ci.f1[1])}</td><td>${pct(ci.precision[0])} to ${pct(ci.precision[1])}</td><td>${pct(ci.recall[0])} to ${pct(ci.recall[1])}</td></tr>
+        </tbody></table></div>
+        <div class="charts">${charts.join("")}</div>
+        <div class="scroll"><table class="mtable"><thead><tr><th>Rolling window starts</th><th>Rows fitted</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>${rr}
+          <tr><td><b>Mean &plusmn; sd</b></td><td></td><td>${pct(ro.precision.mean)} &plusmn; ${pct(ro.precision.sd)}</td><td>${pct(ro.recall.mean)} &plusmn; ${pct(ro.recall.sd)}</td><td>${pct(ro.f1.mean)} &plusmn; ${pct(ro.f1.sd)}</td></tr></tbody></table></div>
+        <div class="note">Calibration on the test window: expected calibration error ${f3(d.calibration.ece)}, Brier score ${f3(d.calibration.brier)} (a predicted 80% really is about 80%).</div>`;
+    }).join("");
+    return `<div class="card sect"><h2>Overfitting and underfitting checks</h2>
+      <div class="note">Five pass/fail checks (limits fixed before looking at the numbers) decide the verdict, and the learning curve, capacity curves and rolling windows show whether the result is stable. Overfitting shows up as a large gap between fit rows and new rows. Underfitting shows up as poor scores even on the fit rows, a supervised model on the same features being far better, a simple rule doing as well, or more capacity still helping. The learning curve should flatten with train and validation together, and the chosen setting should sit on the plateau of the capacity curves (dashed line).</div>${blocks}</div>`;
+  }
+
+  function freshControlsCard(dg) {
+    const fw = dg.fresh_worlds, names = Object.keys(fw.summary);
+    const rows = names.map((n) => {
+      const s = fw.summary[n].f1;
+      return `<tr><td><b>${esc(n)}</b></td><td>${pct(s.mean)} &plusmn; ${pct(s.sd)}</td><td>${pct(s.min)} to ${pct(s.max)}</td><td>${pct(fw.summary[n].precision.mean)}</td><td>${pct(fw.summary[n].recall.mean)}</td></tr>`;
+    }).join("");
+    const ctrl = Object.entries(dg.controls || {}).flatMap(([n, cs]) => Object.entries(cs).map(([k, c]) =>
+      `<tr><td><b>${esc(n)}</b></td><td>${esc(c.description)}</td><td>${f3(c.train.pr_auc)}</td><td>${f3(c.test.pr_auc)}</td><td>${esc(c.verdict)}</td><td class="${c.detected ? "pass" : "fail"}">${c.detected ? "caught" : "MISSED"}</td></tr>`)).join("");
+    return `<div class="card sect"><h2>Brand-new datasets (never seen, never refitted)</h2>
+      <div class="note">The final models and calibrators are applied unchanged to ${fw.seeds.length} freshly generated datasets (new vehicles, trips and anomalies; seeds ${fw.seeds.join(", ")}). Stable scores here mean the models learned the pattern, not this one dataset. The data comes from the same generator, so this shows robustness to sampling, not to a different real-world distribution.</div>
+      <div class="scroll"><table class="mtable"><thead><tr><th>Detector</th><th>F1 mean &plusmn; sd</th><th>F1 range</th><th>Precision</th><th>Recall</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+      <div class="card sect"><h2>Can the checks actually fail? (positive controls)</h2>
+      <div class="note">A check that never fails proves nothing, so each run also tests deliberately broken models: a memoriser that only knows when and where anomalies happened (should be flagged as overfit) and a model starved of its informative features (should be flagged as underfit).</div>
+      <div class="scroll"><table class="mtable"><thead><tr><th>Detector</th><th>Control</th><th>Train PR-AUC</th><th>Test PR-AUC</th><th>Verdict</th><th>Result</th></tr></thead><tbody>${ctrl}</tbody></table></div></div>`;
+  }
+
   // ---------- rendering: model tab ----------
   async function renderModel() {
     const box = $("model-body");
@@ -246,7 +351,7 @@
     const m = state.metrics.models, meta = state.metrics.meta;
     const mlRows = ["api_flood", "fare_anomaly"].map((n) => {
       const d = m[n], c = d["calibrated_p_ge_0.5"], b = d.baseline_iforest_default_threshold;
-      return `<tr><td><b>${esc(n)}</b></td><td>Calibrated (p &gt;= 0.5)</td><td>${pct(c.precision)}</td><td>${pct(c.recall)}</td><td>${pct(c.f1)}</td><td>${num(c.fp)}</td><td>${d.roc_auc}</td><td>${d.pr_auc}</td></tr>
+      return `<tr><td><b>${esc(n)}</b>${d.selected_model ? `<div class="sub">${esc(famName(d.selected_model.family))}</div>` : ""}</td><td>Calibrated (p &gt;= 0.5)</td><td>${pct(c.precision)}</td><td>${pct(c.recall)}</td><td>${pct(c.f1)}</td><td>${num(c.fp)}</td><td>${d.roc_auc}</td><td>${d.pr_auc}</td></tr>
         <tr><td></td><td class="sub">Default Isolation Forest threshold</td><td>${pct(b.precision)}</td><td>${pct(b.recall)}</td><td>${pct(b.f1)}</td><td>${num(b.fp)}</td><td></td><td></td></tr>`;
     }).join("");
     const ruleRows = Object.entries(m.rules || {}).map(([n, r]) =>
@@ -270,6 +375,10 @@
         <div class="note">Rules have no fitted parameters, so they are evaluated on all rows. Probability used is Laplace-smoothed precision, so no rule is ever treated as 100% certain.</div>
         <div class="scroll"><table class="mtable"><thead><tr><th>Detector</th><th>Flagged</th><th>Labelled</th><th>Precision</th><th>Recall</th><th>Probability used</th></tr></thead><tbody>${ruleRows}</tbody></table></div></div>
       ${live}</div>`;
+    try {
+      state.diag = state.diag || await api("/api/diagnostics");
+      box.insertAdjacentHTML("beforeend", `<div class="panel" style="margin-top:20px">${selectionCard(state.diag.selection)}${diagnosticsCard(state.diag.diagnostics)}${freshControlsCard(state.diag.diagnostics)}</div>`);
+    } catch (e) { /* evidence files not generated yet: the rest of the tab still works */ }
   }
 
   // ---------- rendering: blocked tab ----------
